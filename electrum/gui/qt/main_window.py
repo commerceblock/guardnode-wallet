@@ -140,7 +140,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         self.receive_tab = self.create_receive_tab()
         self.addresses_tab = self.create_addresses_tab()
         self.utxo_tab = self.create_utxo_tab()
-        self.assets_tab = self.create_assets_tab()
         self.console_tab = self.create_console_tab()
         self.contacts_tab = self.create_contacts_tab()
         tabs.addTab(self.create_history_tab(), _('History'))
@@ -156,7 +155,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
 
         add_optional_tab(tabs, self.addresses_tab, _("&Addresses"), "addresses")
         add_optional_tab(tabs, self.utxo_tab, _("Co&ins"), "utxo")
-        add_optional_tab(tabs, self.assets_tab, _("As&sets"), "assets")
         add_optional_tab(tabs, self.contacts_tab, _("Con&tacts"), "contacts")
         add_optional_tab(tabs, self.console_tab, _("Con&sole"), "console")
 
@@ -354,7 +352,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         self.history_list.update()
         self.address_list.update()
         self.utxo_list.update()
-        self.assets_list.update()
         self.need_update.set()
         # Once GUI has been initialized check if we want to announce something since the callback has been called before the GUI was initialized
         self.notify_transactions()
@@ -526,7 +523,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         view_menu = menubar.addMenu(_("&View"))
         add_toggle_action(view_menu, self.addresses_tab)
         add_toggle_action(view_menu, self.utxo_tab)
-        add_toggle_action(view_menu, self.assets_tab)
         add_toggle_action(view_menu, self.contacts_tab)
         add_toggle_action(view_menu, self.console_tab)
 
@@ -739,10 +735,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
                 if x:
                     text +=  " [%s unmatured]"%(self.format_amount(x, is_diff=True).strip())
 
-                tokrat = token_ratio(int(self.network.get_local_height()))
-                finemass = c*tokrat/1.0E+8
-                text+=" ("+str("%.4f" % finemass)+" oz)  1 GT = "+str("%.4f" % tokrat)+" oz"
-
                 # append fiat balance and price
                 if self.fx.is_enabled():
                     text += self.fx.get_fiat_status_text(c + u + x,
@@ -773,7 +765,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         self.request_list.update()
         self.address_list.update()
         self.utxo_list.update()
-        self.assets_list.update()
         self.contact_list.update()
         self.invoice_list.update()
         self.update_completions()
@@ -1795,13 +1786,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         self.utxo_list = l = UTXOList(self)
         return self.create_list_tab(l)
 
-    def create_assets_tab(self):
-        from .assets_list import AssetsList
-        self.assets_list = l = AssetsList(self)
-        if not l.verified:
-            self.show_warning(_('Warning: Asset mapping authentication failed'))
-        return self.create_list_tab(l)
-
     def create_contacts_tab(self):
         from .contact_list import ContactList
         self.contact_list = l = ContactList(self)
@@ -2253,51 +2237,6 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         hbox.addWidget(b)
         layout.addLayout(hbox, 4, 1)
         d.exec_()
-
-    def redeem_coins(self, coins):
-        coin_vals = list(coins)
-        fee_estimator = 0
-        tx_desc = 'Redemption transaction'
-        addr = self.wallet.get_unused_address()
-        out_type = TYPE_ADDRESS
-        outputs = []
-        lock_output = TxOutput(out_type,'1111111111111111111114oLvT2',0,1,coin_vals[0]['asset'],1)
-        outputs.append(lock_output)
-
-        for coin in coin_vals:
-            self.wallet.add_input_info(coin)
-            outp = TxOutput(out_type,addr,coin['value'],1,coin['asset'],1)
-            outputs.append(outp)
-
-        tx = Transaction.from_io(coin_vals, outputs)
-        tx.locktime = self.wallet.get_local_height()
-
-        self.show_transaction(tx,tx_desc)
-        self.wallet.set_frozen_state([addr],True)
-        self.wallet.set_label(addr, "Frozen for redemption")
-
-        return
-
-    def burn_coins(self,coins):
-        coin_vals = list(coins)
-        fee_estimator = 0
-        msg = _('WARNING: Creating burn transaction. Only proceed if instructed by token issuer.') + '\n'
-        msg += _('Do you wish to continue?')
-        if not self.question(msg):
-            return
-        tx_desc = 'Asset burn transaction for redemption'
-        outputs = []
-        for coin in coin_vals:
-            self.wallet.add_input_info(coin)
-            outp = TxOutput(2,'6a',coin['value'],1,coin['asset'],1)
-            outputs.append(outp)
-
-        tx = Transaction.from_io(coin_vals, outputs)
-        tx.locktime = self.wallet.get_local_height()
-
-        self.show_transaction(tx,tx_desc)
-
-        return
 
     @protected
     def do_decrypt(self, message_e, pubkey_e, encrypted_e, password):

@@ -71,7 +71,7 @@ class HistoryList(MyTreeWidget, AcceptFileDragDrop):
         return str(datetime.date(d.year, d.month, d.day)) if d else _('None')
 
     def refresh_headers(self):
-        headers = ['', '', _('Date'), _('Description'), _('Amount'), _('Balance'), _('Mass')]
+        headers = ['', '', _('Date'), _('Description'), _('Amount'), _('Balance')]
         fx = self.parent.fx
         if fx and fx.show_history():
             headers.extend(['%s '%fx.ccy + _('Value')])
@@ -245,10 +245,7 @@ class HistoryList(MyTreeWidget, AcceptFileDragDrop):
             icon = self.icon_cache.get(":icons/" + TX_ICONS[status])
             v_str = self.parent.format_amount(value, is_diff=True, whitespaces=True)
             balance_str = self.parent.format_amount(balance, whitespaces=True)
-            tokrat = token_ratio(self.wallet.get_block_height())
-            rmass = str("%.4f" % (float(balance)*tokrat/1.0E+8))
-            rmass_str = rmass+" oz "
-            entry = ['', tx_hash, status_str, label, v_str, balance_str, rmass_str]
+            entry = ['', tx_hash, status_str, label, v_str, balance_str]
             fiat_value = None
             if value is not None and fx and fx.show_history():
                 fiat_value = tx_item['fiat_value'].value
