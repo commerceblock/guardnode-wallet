@@ -25,6 +25,8 @@
 
 import os
 import json
+from electrum import bitcoin
+from .bitcoin import *
 
 
 def read_json(filename, default):
@@ -45,9 +47,10 @@ class OceanMainnet:
     ADDRTYPE_P2PKH = 0
     ADDRTYPE_P2SH = 5
     SEGWIT_HRP = "bc"
-    GENESIS = "786331c97fac638be2e962b8b388d5a0506c7e98091da265b5334fad059600fe"
+    GENESIS = ""
     DEFAULT_PORTS = {'t': '50001', 's': '50002'}
     DEFAULT_SERVERS = read_json('servers.json', {})
+
     CHECKPOINTS = []    # no handling for checkpoins
 
     XPRV_HEADERS = {
@@ -67,13 +70,40 @@ class OceanMainnet:
 
     }
     BIP44_COIN_TYPE = 0
+    #Address the whitelist tokens are initially paid to (defined in the genesis block)
+    WHITELISTCOINSDESTINATION = ""
+    WHITELISTCOINSADDRESS = ""
+    WHITELISTASSET=""
 
 # Current Testnet purposes
 class OceanTestnet(OceanMainnet):
-
     TESTNET = True
     DEFAULT_SERVERS = read_json('servers_testnet.json', {})
     CHECKPOINTS = []
+    ADDRTYPE_P2PKH = 235
+    ADDRTYPE_P2SH = 75
+
+    WHITELISTCOINSDESTINATION = ""
+    WHITELISTCOINSADDRESS = ""
+    WHITELISTASSET=""
+    GENESIS = "a851d562e74434855501d644522ced7ccc04a4a16e968c354bd456abe36527b4"
+
+    XPRV_HEADERS = {
+        'standard':    0x04358394,  # xprv
+        'p2wpkh-p2sh': 0x049d7878,  # yprv
+        'p2wsh-p2sh':  0x0295b005,  # Yprv
+        'p2wpkh':      0x04b2430c,  # zprv
+        'p2wsh':       0x02aa7a99,  # Zprv
+
+    }
+
+    XPUB_HEADERS = {
+        'standard':    0x043587cf,  # xpub
+        'p2wpkh-p2sh': 0x049d7cb2,  # ypub
+        'p2wsh-p2sh':  0x0295b43f,  # Ypub
+        'p2wpkh':      0x04b24746,  # zpub
+        'p2wsh':       0x02aa7ed3,  # Zpub
+    }
 
 class OceanRegtest(OceanMainnet):
 
@@ -120,7 +150,6 @@ def set_simnet():
 def set_mainnet():
     global net
     net = OceanMainnet
-
 
 def set_testnet():
     global net

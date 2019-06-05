@@ -186,7 +186,7 @@ class CoinChooserBase(PrintError):
         return change
 
     def make_tx(self, coins, outputs, change_addrs, fee_estimator,
-                dust_threshold):
+                dust_threshold, b_allow_zerospend: bool=False):
         """Select unspent coins to spend to pay outputs.  If the change is
         greater than dust_threshold (after adding the change output to
         the transaction) it is kept, otherwise none is sent and it is
@@ -194,6 +194,7 @@ class CoinChooserBase(PrintError):
 
         Note: fee_estimator expects virtual bytes
         """
+
         # Deterministic randomness from coins
         utxos = [c['prevout_hash'] + str(c['prevout_n']) for c in coins]
         self.p = PRNG(''.join(sorted(utxos)))
@@ -238,19 +239,11 @@ class CoinChooserBase(PrintError):
 
 
         inputs = [coin for b in buckets for coin in b.coins]
-        #Store TOTAL value associated with each input asset type by summing each of the input values associated with each asset type
-        input_map = {}
-        for i in inputs:
-            asset=i['asset']
-            value=i['value']
-            if (asset in input_map):
-                input_map[asset]=input_map[asset]+value
-            else:
-                input_map[asset]=value
+        input_map = get_input_asset_map(inputs)
 
         # append outputs with asset id and adjust asset input value balance
         asset_outputs = [TxOutput(o.type, o.address, value, 1, asset, 1)
-                for o in outputs for (asset, value) in get_asset_outputs(o.value, input_map)]
+                for o in outputs for (asset, value) in get_asset_outputs(o.value, input_map, b_allow_zerospend)]
 
         tx = Transaction.from_io(inputs[:], asset_outputs[:])
         tx_weight = get_tx_weight(buckets)
@@ -395,7 +388,7 @@ class CoinChooserPrivacy(CoinChooserRandom):
 
         return penalty
 
-def get_asset_outputs(value, input_map):
+def get_asset_outputs(value, input_map, b_allow_zerospend: bool = False):
     """
     Given a map of asset-value pairs construct transaction outputs
     The outputs should cover the output_value required and there
@@ -403,15 +396,26 @@ def get_asset_outputs(value, input_map):
     """
     outputs = []
     for (asset, in_value) in input_map.items():
-        assert value > 0
         out_value = min(value, in_value)
         value -= out_value
         input_map[asset] -= out_value
-        if out_value > 0:
+        if out_value > 0 or b_allow_zerospend:
             outputs.append((asset, out_value))
         if value == 0:
             break
     return outputs
+
+#Create a map of asset type to total value, summing over all inputs
+def get_input_asset_map(inputs):
+    input_map={}
+    for i in inputs:
+        asset=i['asset']
+        value=i['value']
+        if (asset in input_map):
+            input_map[asset]=input_map[asset]+value
+        else:
+            input_map[asset]=value
+    return input_map
 
 COIN_CHOOSERS = {
     'Privacy': CoinChooserPrivacy,

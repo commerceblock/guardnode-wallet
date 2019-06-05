@@ -32,11 +32,12 @@ import ast
 import base64
 from functools import wraps
 from decimal import Decimal
+from io import StringIO, BytesIO
 
 from .import util, ecc
 from .util import bfh, bh2u, format_satoshis, json_decode, print_error, json_encode
 from . import bitcoin
-from .bitcoin import is_address,  hash_160, COIN, TYPE_ADDRESS
+from .bitcoin import is_address,  hash_160, COIN, TYPE_ADDRESS, pubkey_to_address
 from .i18n import _
 from .transaction import Transaction, multisig_script, TxOutput
 from .paymentrequest import PR_PAID, PR_UNPAID, PR_UNKNOWN, PR_EXPIRED
@@ -313,6 +314,10 @@ class Commands:
         return out
 
     @command('w')
+    def dumpkycfile(self, filename=None, password=None):
+       return self.wallet.dumpkycfile(filename, password)
+
+    @command('w')
     def getbalance(self):
         """Return the balance of your wallet. """
         c, u, x = self.wallet.get_balance()
@@ -543,7 +548,8 @@ class Commands:
     @command('wp')
     def decrypt(self, pubkey, encrypted, password=None):
         """Decrypt a message encrypted with a public key."""
-        return self.wallet.decrypt_message(pubkey, encrypted, password)
+        plaintext = self.wallet.decrypt_message(pubkey, encrypted, password, get_ephemeral=False)
+        return plaintext
 
     def _format_request(self, out):
         pr_str = {
@@ -743,7 +749,8 @@ command_options = {
     'year':        (None, "Show history for a given year"),
     'fee_method':  (None, "Fee estimation method to use"),
     'fee_level':   (None, "Float between 0.0 and 1.0, representing fee slider position"),
-    'tweaked':     (None, "Show tweaked public keys")
+    'tweaked':     (None, "Show tweaked public keys"),
+    'filename':    (None, "Output file name")
 }
 
 

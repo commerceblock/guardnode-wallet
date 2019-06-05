@@ -177,6 +177,12 @@ class CancelButton(QPushButton):
         QPushButton.__init__(self, label or _("Cancel"))
         self.clicked.connect(dialog.reject)
 
+class AcceptButton(QPushButton):
+    def __init__(self, dialog, label=None):
+        QPushButton.__init__(self, label or _("Accept"))
+        self.clicked.connect(dialog.accept)
+        self.setDefault(True)
+
 class MessageBoxMixin(object):
     def top_level_window_recurse(self, window=None, test_func=None):
         window = window or self
@@ -351,18 +357,19 @@ def address_field(addresses):
     return hbox, address_e
 
 
-def filename_field(parent, config, defaultname, select_msg):
+def filename_field(parent, config, defaultname, select_msg, b_csv_select=True):
 
     vbox = QVBoxLayout()
-    vbox.addWidget(QLabel(_("Format")))
     gb = QGroupBox("format", parent)
     b1 = QRadioButton(gb)
     b1.setText(_("CSV"))
     b1.setChecked(True)
     b2 = QRadioButton(gb)
     b2.setText(_("json"))
-    vbox.addWidget(b1)
-    vbox.addWidget(b2)
+    if b_csv_select:
+        vbox.addWidget(QLabel(_("Format")))
+        vbox.addWidget(b1)
+        vbox.addWidget(b2)
 
     hbox = QHBoxLayout()
 
@@ -698,6 +705,7 @@ class ColorScheme:
     YELLOW = ColorSchemeItem("#897b2a", "#ffff00")
     RED = ColorSchemeItem("#7c1111", "#f18c8c")
     BLUE = ColorSchemeItem("#123b7c", "#8cb3f2")
+    GREY = ColorSchemeItem("#2F4F4F", "#2F4F4F")
     DEFAULT = ColorSchemeItem("black", "white")
 
     @staticmethod
@@ -761,7 +769,7 @@ def import_meta_gui(electrum_window, title, importer, on_success):
 def export_meta_gui(electrum_window, title, exporter):
     filter_ = "JSON (*.json);;All files (*)"
     filename = electrum_window.getSaveFileName(_("Select file to save your {}").format(title),
-                                               'electrum_{}.json'.format(title), filter_)
+                                               'cbwallet_{}.json'.format(title), filter_)
     if not filename:
         return
     try:
