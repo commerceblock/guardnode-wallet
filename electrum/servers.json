@@ -1,7 +1,8 @@
 {
-    "oceanelectrum.commerceblock.com": {
+    "wallet.commerceblock.com": {
         "pruning": "-",
+        "s": "18001",
         "t": "18001",
-        "version": "1.7"
+        "version": "2.0"
     }
 }

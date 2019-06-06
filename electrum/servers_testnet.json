@@ -1,8 +1,8 @@
 {
-    "127.0.0.1": {
+    "wallet.testnet.commerceblock.com": {
         "pruning": "-",
-        "s": "51002",
-        "t": "51001",
-        "version": "1.2"
+        "s": "10004",
+        "t": "10004",
+        "version": "2.0"
     }
 }
